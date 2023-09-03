@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from contextlib import nullcontext
-from hashlib import sha256
+from hashlib import blake2b, sha256
 from logging import getLogger
 from typing import (
     TYPE_CHECKING,
@@ -50,6 +50,11 @@ RequestContent = Union[Mapping, str, bytes]
 
 logger = getLogger(__name__)
 
+fips = False
+
+def fips_support():
+    global fips
+    fips = True
 
 def create_key(
     request: AnyRequest,
@@ -78,7 +83,11 @@ def create_key(
     ]
 
     # Generate a hash based on this info
-    key = sha256()
+    if fips:
+        key = sha256()
+    else:
+        key = blake2b(digest_size=8)
+
     for part in key_parts:
         key.update(encode(part))
     return key.hexdigest()
